@@ -1,0 +1,1 @@
+terraform import microsoftdefender_indicator.example_application 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

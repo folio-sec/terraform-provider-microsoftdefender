@@ -1,0 +1,122 @@
+---
+page_title: "Microsoft Defender Provider"
+description: |-
+  The Microsoft Defender provider manages Microsoft Defender for Endpoint resources through its native API.
+---
+
+# Microsoft Defender Provider
+
+The Microsoft Defender provider manages Microsoft Defender for Endpoint
+resources through the Defender for Endpoint native API. It does not use the
+Microsoft Graph Security Indicator API.
+
+Use the navigation to read about the available resources.
+
+## Authentication
+
+The provider supports client credential and OIDC workload identity
+authentication. Credentials can be supplied through provider attributes or
+environment variables. Environment variables are recommended for secrets and
+OIDC assertions.
+
+For client credential authentication, set:
+
+- `MICROSOFTDEFENDER_TENANT_ID`
+- `MICROSOFTDEFENDER_CLIENT_ID`
+- `MICROSOFTDEFENDER_CLIENT_SECRET`
+
+For OIDC, use `MICROSOFTDEFENDER_OIDC_TOKEN`,
+`MICROSOFTDEFENDER_OIDC_TOKEN_FILE_PATH`, or `AZURE_FEDERATED_TOKEN_FILE`.
+GitHub Actions OIDC is detected automatically when the job has
+`id-token: write`.
+
+Authentication configuration is resolved as follows:
+
+1. A provider argument takes precedence over its corresponding environment
+   variable. For `tenant_id` and `client_id`, the provider then checks the
+   `MICROSOFTDEFENDER_*` variable followed by the corresponding `AZURE_*`
+   variable.
+2. Configure exactly one authentication source: `client_secret`, a direct
+   `oidc_token`, or `oidc_token_file_path`. Configuring more than one source,
+   including through environment variables, returns an error instead of
+   choosing one implicitly.
+3. If none of those sources is configured, the provider uses GitHub Actions
+   OIDC when both `ACTIONS_ID_TOKEN_REQUEST_URL` and
+   `ACTIONS_ID_TOKEN_REQUEST_TOKEN` are available.
+4. If no authentication source can be resolved, provider configuration fails.
+
+For `oidc_token_file_path`, the provider checks
+`MICROSOFTDEFENDER_OIDC_TOKEN_FILE_PATH` before
+`AZURE_FEDERATED_TOKEN_FILE` when the provider argument is omitted.
+
+### Client credential
+
+Set `MICROSOFTDEFENDER_CLIENT_SECRET` in the environment. Do not write the
+client secret directly in Terraform configuration.
+
+```terraform
+provider "microsoftdefender" {
+  tenant_id = var.microsoftdefender_tenant_id
+  client_id = var.microsoftdefender_client_id
+
+  # client_secret is read from MICROSOFTDEFENDER_CLIENT_SECRET.
+}
+```
+
+### Direct OIDC assertion
+
+Set `MICROSOFTDEFENDER_OIDC_TOKEN` in the environment. This mode is useful when
+the workload platform supplies an assertion directly.
+
+```terraform
+provider "microsoftdefender" {
+  tenant_id = var.microsoftdefender_tenant_id
+  client_id = var.microsoftdefender_client_id
+
+  # oidc_token is read from MICROSOFTDEFENDER_OIDC_TOKEN.
+}
+```
+
+### OIDC token file
+
+```terraform
+provider "microsoftdefender" {
+  tenant_id            = var.microsoftdefender_tenant_id
+  client_id            = var.microsoftdefender_client_id
+  oidc_token_file_path = var.microsoftdefender_oidc_token_file_path
+}
+```
+
+The file path can instead be supplied through
+`MICROSOFTDEFENDER_OIDC_TOKEN_FILE_PATH` or `AZURE_FEDERATED_TOKEN_FILE`.
+
+### GitHub Actions OIDC
+
+Set `MICROSOFTDEFENDER_TENANT_ID` and `MICROSOFTDEFENDER_CLIENT_ID` in the job
+environment. With `permissions: id-token: write`, GitHub supplies the OIDC
+request environment variables automatically.
+
+```terraform
+provider "microsoftdefender" {
+  # tenant_id and client_id are read from the environment. The OIDC assertion
+  # is requested from GitHub Actions automatically.
+}
+```
+
+## Example Usage
+
+```terraform
+terraform {
+  required_providers {
+    microsoftdefender = {
+      source = "folio-sec/microsoftdefender"
+    }
+  }
+}
+
+provider "microsoftdefender" {
+  # Prefer environment variables for credentials.
+}
+```
+
+{{ .SchemaMarkdown | trimspace }}
