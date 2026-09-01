@@ -2,7 +2,7 @@ BINARY_NAME := terraform-provider-microsoftdefender
 VERSION ?= $(shell cat version)
 TASK_GOTOOLCHAIN ?= go1.27.0
 GOLANGCI_LINT_VERSION ?= v2.13.2
-GOVULNCHECK_VERSION ?= v1.1.4
+GOVULNCHECK_VERSION ?= v1.7.0
 GORELEASER_VERSION ?= v2.18.0
 
 .PHONY: build fmt generate generate/docs lint release/check test testacc vulncheck
