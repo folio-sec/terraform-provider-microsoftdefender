@@ -1,0 +1,15 @@
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+dist/
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+.env
+.DS_Store
+go.work
