@@ -59,6 +59,9 @@ func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"id": schema.StringAttribute{
 				Description: "Microsoft Defender Indicator API ID.",
 				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"indicator_value": schema.StringAttribute{
 				CustomType:    providertypes.LowerStringType{},

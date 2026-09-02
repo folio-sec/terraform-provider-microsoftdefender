@@ -464,10 +464,15 @@ func updateData(t *testing.T, subject resource.Resource, model resourceModel) (r
 	schemaValue := resourceSchema(t, subject)
 	ctx := context.Background()
 	plan := tfsdk.Plan{Raw: tftypes.NewValue(schemaValue.Type().TerraformType(ctx), nil), Schema: schemaValue}
+	state := tfsdk.State{Raw: tftypes.NewValue(schemaValue.Type().TerraformType(ctx), nil), Schema: schemaValue}
+	if diagnostics := state.Set(ctx, &model); diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	model.ID = types.StringUnknown()
 	if diagnostics := plan.Set(ctx, &model); diagnostics.HasError() {
 		t.Fatal(diagnostics)
 	}
-	return resource.UpdateRequest{Plan: plan}, &resource.UpdateResponse{State: tfsdk.State{Raw: tftypes.NewValue(schemaValue.Type().TerraformType(ctx), nil), Schema: schemaValue}}
+	return resource.UpdateRequest{Plan: plan, State: state}, &resource.UpdateResponse{State: tfsdk.State{Raw: tftypes.NewValue(schemaValue.Type().TerraformType(ctx), nil), Schema: schemaValue}}
 }
 
 func deleteData(t *testing.T, subject resource.Resource, model resourceModel) (resource.DeleteRequest, *resource.DeleteResponse) {

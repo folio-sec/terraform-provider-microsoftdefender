@@ -80,7 +80,14 @@ func (r *indicatorResource) Read(ctx context.Context, req resource.ReadRequest, 
 func (r *indicatorResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan resourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	var state resourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+	expectedID := state.ID.ValueString()
+	if expectedID == "" {
+		resp.Diagnostics.AddError("Invalid Indicator state", "The existing Indicator state does not contain an API ID.")
 		return
 	}
 	updated, err := r.client.Submit(ctx, apiIndicator(ctx, plan, &resp.Diagnostics))
@@ -92,10 +99,10 @@ func (r *indicatorResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 	if updated.ID == "" {
-		updated.ID = plan.ID.ValueString()
+		updated.ID = expectedID
 	}
-	if updated.ID != plan.ID.ValueString() {
-		resp.Diagnostics.AddError("Unexpected Indicator update response", fmt.Sprintf("The API returned ID %q while updating ID %q.", updated.ID, plan.ID.ValueString()))
+	if updated.ID != expectedID {
+		resp.Diagnostics.AddError("Unexpected Indicator update response", fmt.Sprintf("The API returned ID %q while updating ID %q.", updated.ID, expectedID))
 		return
 	}
 	setState(ctx, &plan, updated, &resp.Diagnostics)
