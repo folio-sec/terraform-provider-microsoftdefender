@@ -55,29 +55,11 @@ resource "microsoftdefender_indicator" "example_installer" {
 
 ### Required
 
-- `action` (String) Current Indicator action. Supported values:
-
-```text
-Allowed
-Audit
-Block
-BlockAndRemediate
-Warn
-```
+- `action` (String) Current Indicator action. Supported values: `Allowed`, `Audit`, `Block`, `BlockAndRemediate`, `Warn`.
 
 The legacy `Alert` and `AlertAndBlock` actions are rejected.
 - `description` (String) Indicator description.
-- `indicator_type` (String) Indicator type. Supported values:
-
-```text
-FileSha1
-FileMd5
-CertificateThumbprint
-FileSha256
-IpAddress
-DomainName
-Url
-```
+- `indicator_type` (String) Indicator type. Supported values: `FileSha1`, `FileMd5`, `CertificateThumbprint`, `FileSha256`, `IpAddress`, `DomainName`, `Url`.
 - `indicator_value` (String) Indicator value. File hashes are normalized to lowercase. Changing it replaces the resource.
 - `title` (String) Indicator alert title.
 
@@ -89,14 +71,7 @@ Url
 - `generate_alert` (Boolean) Whether the Indicator generates an alert. Must be true for Audit.
 - `rbac_group_names` (Set of String) RBAC device group names. **Warning:** An empty or omitted set applies the Indicator to all Defender devices in the tenant.
 - `recommended_actions` (String) Recommended actions displayed with Indicator alerts.
-- `severity` (String) Indicator severity. Supported values:
-
-```text
-Informational
-Low
-Medium
-High
-```
+- `severity` (String) Indicator severity. Supported values: `Informational`, `Low`, `Medium`, `High`.
 
 ### Read-Only
 

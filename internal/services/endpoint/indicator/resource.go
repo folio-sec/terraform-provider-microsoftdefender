@@ -45,7 +45,6 @@ func (r *indicatorResource) Metadata(_ context.Context, req resource.MetadataReq
 }
 
 func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	replace := []planmodifier.String{stringplanmodifier.RequiresReplace()}
 	markdownDescription := "Manages an Indicator through the Microsoft Defender for Endpoint native Indicator API.\n\n" +
 		"## Operational considerations\n\n" +
 		"- This resource requires a Microsoft Entra application with the `WindowsDefenderATP / Ti.ReadWrite.All` application permission and tenant administrator consent.\n" +
@@ -64,14 +63,18 @@ func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"indicator_value": schema.StringAttribute{
-				CustomType:    providertypes.LowerStringType{},
-				Description:   "Indicator value. File hashes are normalized to lowercase. Changing it replaces the resource.",
-				Required:      true,
-				PlanModifiers: replace,
+				CustomType:  providertypes.LowerStringType{},
+				Description: "Indicator value. File hashes are normalized to lowercase. Changing it replaces the resource.",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"indicator_type": schema.StringAttribute{
-				MarkdownDescription: "Indicator type. Supported values:\n\n```text\nFileSha1\nFileMd5\nCertificateThumbprint\nFileSha256\nIpAddress\nDomainName\nUrl\n```",
-				Required:            true,
+				MarkdownDescription: "Indicator type. Supported values: " +
+					"`FileSha1`, `FileMd5`, `CertificateThumbprint`, `FileSha256`, " +
+					"`IpAddress`, `DomainName`, `Url`.",
+				Required: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"FileSha1",
@@ -83,11 +86,15 @@ func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 						"Url",
 					),
 				},
-				PlanModifiers: replace,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"action": schema.StringAttribute{
-				MarkdownDescription: "Current Indicator action. Supported values:\n\n```text\nAllowed\nAudit\nBlock\nBlockAndRemediate\nWarn\n```\n\nThe legacy `Alert` and `AlertAndBlock` actions are rejected.",
-				Required:            true,
+				MarkdownDescription: "Current Indicator action. Supported values: " +
+					"`Allowed`, `Audit`, `Block`, `BlockAndRemediate`, `Warn`.\n\n" +
+					"The legacy `Alert` and `AlertAndBlock` actions are rejected.",
+				Required: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"Allowed",
@@ -107,9 +114,11 @@ func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Required:    true,
 			},
 			"application": schema.StringAttribute{
-				Description:   "User-friendly application name. The API only applies it when creating an Indicator, so changing it replaces the resource.",
-				Optional:      true,
-				PlanModifiers: replace,
+				Description: "User-friendly application name. The API only applies it when creating an Indicator, so changing it replaces the resource.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"external_id": schema.StringAttribute{
 				Description: "API-reported external correlation ID.",
@@ -121,10 +130,11 @@ func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Optional:    true,
 			},
 			"severity": schema.StringAttribute{
-				MarkdownDescription: "Indicator severity. Supported values:\n\n```text\nInformational\nLow\nMedium\nHigh\n```",
-				Optional:            true,
-				Computed:            true,
-				Default:             stringdefault.StaticString("Informational"),
+				MarkdownDescription: "Indicator severity. Supported values: " +
+					"`Informational`, `Low`, `Medium`, `High`.",
+				Optional: true,
+				Computed: true,
+				Default:  stringdefault.StaticString("Informational"),
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"Informational",
