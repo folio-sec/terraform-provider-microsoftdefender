@@ -69,7 +69,9 @@ The legacy `Alert` and `AlertAndBlock` actions are rejected.
 - `educate_url` (String) Custom notification or support URL. Supported by the API for URL Indicators with Block or Warn actions.
 - `expiration_time` (String) Optional RFC3339 expiration time.
 - `generate_alert` (Boolean) Whether the Indicator generates an alert. Must be true for Audit.
-- `rbac_group_names` (Set of String) RBAC device group names. **Warning:** An empty or omitted set applies the Indicator to all Defender devices in the tenant.
+- `rbac_group_names` (Set of String) RBAC device group names.
+
+~> **Warning:** An empty or omitted set applies the Indicator to all Defender devices in the tenant.
 - `recommended_actions` (String) Recommended actions displayed with Indicator alerts.
 - `severity` (String) Indicator severity. Supported values: `Informational`, `Low`, `Medium`, `High`.
 

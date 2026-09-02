@@ -7,6 +7,7 @@ import (
 
 	"github.com/folio-sec/terraform-provider-microsoftdefender/internal/client"
 	indicatorclient "github.com/folio-sec/terraform-provider-microsoftdefender/internal/client/endpoint/indicator"
+	"github.com/folio-sec/terraform-provider-microsoftdefender/internal/docs"
 	providertypes "github.com/folio-sec/terraform-provider-microsoftdefender/internal/types"
 	"github.com/folio-sec/terraform-provider-microsoftdefender/internal/validation"
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
@@ -153,11 +154,18 @@ func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Optional:    true,
 			},
 			"rbac_group_names": schema.SetAttribute{
-				MarkdownDescription: "RBAC device group names. **Warning:** An empty or omitted set applies the Indicator to all Defender devices in the tenant.",
-				Optional:            true,
-				Computed:            true,
-				ElementType:         types.StringType,
-				Default:             setdefault.StaticValue(types.SetValueMust(types.StringType, nil)),
+				MarkdownDescription: docs.Description(
+					"RBAC device group names.",
+					docs.Callout{
+						Sigil: docs.Warning,
+						Label: "Warning",
+						Text:  "An empty or omitted set applies the Indicator to all Defender devices in the tenant.",
+					},
+				),
+				Optional:    true,
+				Computed:    true,
+				ElementType: types.StringType,
+				Default:     setdefault.StaticValue(types.SetValueMust(types.StringType, nil)),
 			},
 			"generate_alert": schema.BoolAttribute{
 				Description: "Whether the Indicator generates an alert. Must be true for Audit.",
