@@ -1,0 +1,41 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+formatters:
+  enable: [gofmt, goimports]
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errcheck
+    - gocritic
+    - godot
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - noctx
+    - nolintlint
+    - revive
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+    - wrapcheck
+  settings:
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+  exclusions:
+    generated: strict
+    rules:
+      - path: _test\.go
+        linters: [bodyclose, gosec, noctx, wrapcheck]
