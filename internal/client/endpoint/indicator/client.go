@@ -191,7 +191,17 @@ func (c *Client) doJSON(ctx context.Context, method, path string, query url.Valu
 			return &RequestNotSentError{Err: fmt.Errorf("encode request: %w", err)}
 		}
 	}
-	response, requestErr := c.send(ctx, method, path, query, encoded)
+	requestCtx := ctx
+	timeout := c.requestTimeout
+	if method == http.MethodGet {
+		timeout = c.retryBudget
+	}
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		requestCtx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+	response, requestErr := c.send(requestCtx, method, path, query, encoded)
 	if requestErr != nil {
 		return requestErr
 	}
@@ -226,17 +236,7 @@ func (c *Client) doJSON(ctx context.Context, method, path string, query url.Valu
 }
 
 func (c *Client) send(ctx context.Context, method, path string, query url.Values, body []byte) (*http.Response, error) {
-	requestCtx := ctx
-	timeout := c.requestTimeout
-	if method == http.MethodGet {
-		timeout = c.retryBudget
-	}
-	if timeout > 0 {
-		var cancel context.CancelFunc
-		requestCtx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
-	}
-	token, err := c.credential.GetToken(requestCtx, policy.TokenRequestOptions{Scopes: []string{c.tokenScope}})
+	token, err := c.credential.GetToken(ctx, policy.TokenRequestOptions{Scopes: []string{c.tokenScope}})
 	if err != nil {
 		return nil, &RequestNotSentError{Err: fmt.Errorf("acquire Defender for Endpoint access token: %w", err)}
 	}
@@ -246,7 +246,7 @@ func (c *Client) send(ctx context.Context, method, path string, query url.Values
 	}
 	u := c.baseURL.ResolveReference(reference)
 	u.RawQuery = query.Encode()
-	request, err := retryablehttp.NewRequestWithContext(requestCtx, method, u.String(), body)
+	request, err := retryablehttp.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
 		return nil, &RequestNotSentError{Err: fmt.Errorf("create HTTP request: %w", err)}
 	}

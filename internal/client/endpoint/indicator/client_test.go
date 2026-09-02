@@ -23,6 +23,20 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 
 type repeatedByteReader struct{}
 
+type contextBoundBody struct {
+	context context.Context
+	reader  io.Reader
+}
+
+func (body *contextBoundBody) Read(buffer []byte) (int, error) {
+	if err := body.context.Err(); err != nil {
+		return 0, err
+	}
+	return body.reader.Read(buffer)
+}
+
+func (*contextBoundBody) Close() error { return nil }
+
 func (repeatedByteReader) Read(buffer []byte) (int, error) {
 	for index := range buffer {
 		buffer[index] = 'x'
@@ -97,6 +111,24 @@ func TestFindByValueEscapesODataAndDecodesCollection(t *testing.T) {
 		results[0].ExternalID == nil || *results[0].ExternalID != "correlation-7" ||
 		len(results[0].RBACGroupIDs) != 1 || results[0].CreationTimeDateTimeUTC == nil {
 		t.Fatalf("results = %#v", results)
+	}
+}
+
+func TestRequestContextRemainsActiveWhileReadingResponse(t *testing.T) {
+	t.Parallel()
+	httpClient := &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+			Body: &contextBoundBody{
+				context: request.Context(),
+				reader:  strings.NewReader(`{"value":[]}`),
+			},
+			Request: request,
+		}, nil
+	})}
+	if _, err := testClient(t, "https://example.test", validCredential(), httpClient).FindByValue(context.Background(), "value"); err != nil {
+		t.Fatal(err)
 	}
 }
 
