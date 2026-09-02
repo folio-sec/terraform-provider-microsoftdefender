@@ -51,31 +51,36 @@ For `oidc_token_file_path`, the provider checks
 
 ### Client credential
 
-Set `MICROSOFTDEFENDER_CLIENT_SECRET` in the environment. Do not write the
-client secret directly in Terraform configuration.
+The client secret can be supplied through the sensitive `client_secret`
+provider argument:
 
 ```terraform
 provider "microsoftdefender" {
-  tenant_id = var.microsoftdefender_tenant_id
-  client_id = var.microsoftdefender_client_id
-
-  # client_secret is read from MICROSOFTDEFENDER_CLIENT_SECRET.
+  tenant_id     = var.microsoftdefender_tenant_id
+  client_id     = var.microsoftdefender_client_id
+  client_secret = var.microsoftdefender_client_secret
 }
 ```
+
+Prefer setting `MICROSOFTDEFENDER_CLIENT_SECRET` in the environment and
+omitting `client_secret` from the provider block when possible.
 
 ### Direct OIDC assertion
 
-Set `MICROSOFTDEFENDER_OIDC_TOKEN` in the environment. This mode is useful when
-the workload platform supplies an assertion directly.
+This mode is useful when the workload platform supplies an assertion directly.
+The assertion can be supplied through the sensitive `oidc_token` provider
+argument:
 
 ```terraform
 provider "microsoftdefender" {
-  tenant_id = var.microsoftdefender_tenant_id
-  client_id = var.microsoftdefender_client_id
-
-  # oidc_token is read from MICROSOFTDEFENDER_OIDC_TOKEN.
+  tenant_id  = var.microsoftdefender_tenant_id
+  client_id  = var.microsoftdefender_client_id
+  oidc_token = var.microsoftdefender_oidc_token
 }
 ```
+
+Alternatively, omit `oidc_token` from the provider block and set
+`MICROSOFTDEFENDER_OIDC_TOKEN` in the environment.
 
 ### OIDC token file
 
