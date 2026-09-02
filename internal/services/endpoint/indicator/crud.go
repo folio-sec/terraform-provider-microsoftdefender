@@ -90,10 +90,11 @@ func (r *indicatorResource) Update(ctx context.Context, req resource.UpdateReque
 		resp.Diagnostics.AddError("Invalid Indicator state", "The existing Indicator state does not contain an API ID.")
 		return
 	}
-	updated, err := r.client.Submit(ctx, apiIndicator(ctx, plan, &resp.Diagnostics))
+	requested := apiIndicator(ctx, plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	updated, err := r.client.Submit(ctx, requested)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to update Indicator", err.Error())
 		return
@@ -115,7 +116,12 @@ func (r *indicatorResource) Delete(ctx context.Context, req resource.DeleteReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if err := r.client.Delete(ctx, state.ID.ValueString()); err != nil {
+	id := state.ID.ValueString()
+	if id == "" {
+		resp.Diagnostics.AddError("Invalid Indicator state", "The existing Indicator state does not contain an API ID.")
+		return
+	}
+	if err := r.client.Delete(ctx, id); err != nil {
 		resp.Diagnostics.AddError("Unable to delete Indicator", err.Error())
 	}
 }

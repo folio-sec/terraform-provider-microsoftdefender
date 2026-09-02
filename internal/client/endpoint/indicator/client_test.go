@@ -74,14 +74,31 @@ func TestAuthorizationPostAndResponseDecode(t *testing.T) {
 	credential := &fakeCredential{token: azcore.AccessToken{Token: "secret-token"}}
 	client := testClient(t, "https://example.test", credential, httpClient)
 	educateURL := "https://support.example.test/indicator"
-	result, err := client.Submit(context.Background(), Indicator{IndicatorValue: "abcd", IndicatorType: "FileSha256", Action: "Allowed", Title: "title", Description: "description", Severity: "Informational", EducateURL: &educateURL, RBACGroupNames: []string{}})
+	externalID := "correlation-42"
+	result, err := client.Submit(context.Background(), Indicator{
+		IndicatorValue: "abcd",
+		IndicatorType:  "FileSha256",
+		Action:         "Allowed",
+		Title:          "title",
+		Description:    "description",
+		ExternalID:     &externalID,
+		Severity:       "Informational",
+		EducateURL:     &educateURL,
+		RBACGroupNames: []string{},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if result.ID != "42" {
 		t.Fatalf("ID = %q", result.ID)
 	}
-	for _, fragment := range []string{`"indicatorValue":"abcd"`, `"educateUrl":"https://support.example.test/indicator"`, `"rbacGroupNames":[]`, `"generateAlert":false`} {
+	for _, fragment := range []string{
+		`"indicatorValue":"abcd"`,
+		`"externalId":"correlation-42"`,
+		`"educateUrl":"https://support.example.test/indicator"`,
+		`"rbacGroupNames":[]`,
+		`"generateAlert":false`,
+	} {
 		if !strings.Contains(received, fragment) {
 			t.Errorf("request body %q does not contain %q", received, fragment)
 		}

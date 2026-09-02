@@ -58,6 +58,10 @@ func TestResourceMetadataSchemaAndLifecycle(t *testing.T) {
 	if groups.Required || !groups.Optional || !groups.Computed || groups.Default == nil || groups.ElementType != types.StringType {
 		t.Errorf("rbac_group_names = %#v", groups)
 	}
+	externalID := schemaValue.Attributes["external_id"].(resourceschema.StringAttribute)
+	if externalID.Required || !externalID.Optional || !externalID.Computed {
+		t.Errorf("external_id = %#v", externalID)
+	}
 	for _, name := range []string{"indicator_value", "indicator_type", "application"} {
 		attribute := schemaValue.Attributes[name].(resourceschema.StringAttribute)
 		if len(attribute.PlanModifiers) == 0 {
@@ -302,14 +306,40 @@ func TestReadRejectsMultipleMatches(t *testing.T) {
 func TestUpdatePostsAndRefreshesState(t *testing.T) {
 	t.Parallel()
 	submits := 0
+	model := testModel(t)
+	model.ExternalID = types.StringValue("correlation-1")
 	subject := &indicatorResource{client: &fakeAPI{submit: func(_ context.Context, value indicatorclient.Indicator) (indicatorclient.Indicator, error) {
 		submits++
+		if value.ExternalID == nil || *value.ExternalID != "correlation-1" {
+			t.Errorf("external ID = %#v", value.ExternalID)
+		}
 		value.Title = "updated by API"
 		return value, nil
 	}}}
-	request, response := updateData(t, subject, testModel(t))
+	request, response := updateData(t, subject, model)
 	subject.Update(context.Background(), request, response)
-	if response.Diagnostics.HasError() || submits != 1 || getState(t, response.State).Title.ValueString() != "updated by API" {
+	state := getState(t, response.State)
+	if response.Diagnostics.HasError() || submits != 1 || state.Title.ValueString() != "updated by API" || state.ExternalID.ValueString() != "correlation-1" {
+		t.Fatalf("diagnostics = %v, submits = %d", response.Diagnostics, submits)
+	}
+}
+
+func TestUpdateDoesNotSubmitAfterRequestConversionError(t *testing.T) {
+	t.Parallel()
+	submits := 0
+	subject := &indicatorResource{client: &fakeAPI{submit: func(context.Context, indicatorclient.Indicator) (indicatorclient.Indicator, error) {
+		submits++
+		return indicatorclient.Indicator{}, nil
+	}}}
+	model := testModel(t)
+	request, response := updateData(t, subject, model)
+	model.ID = types.StringUnknown()
+	model.RBACGroupNames = types.SetUnknown(types.StringType)
+	if diagnostics := request.Plan.Set(context.Background(), &model); diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	subject.Update(context.Background(), request, response)
+	if !response.Diagnostics.HasError() || submits != 0 {
 		t.Fatalf("diagnostics = %v, submits = %d", response.Diagnostics, submits)
 	}
 }
@@ -334,25 +364,36 @@ func TestEducateURLRoundTrip(t *testing.T) {
 	}
 }
 
-func TestDelete204And404(t *testing.T) {
+func TestDeleteUsesStateID(t *testing.T) {
 	t.Parallel()
-	for name, deleteErr := range map[string]error{"204": nil, "404": nil} {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			deletes := 0
-			subject := &indicatorResource{client: &fakeAPI{delete: func(_ context.Context, id string) error {
-				deletes++
-				if id != "api-1" {
-					t.Errorf("id = %q", id)
-				}
-				return deleteErr
-			}}}
-			request, response := deleteData(t, subject, testModel(t))
-			subject.Delete(context.Background(), request, response)
-			if response.Diagnostics.HasError() || deletes != 1 {
-				t.Fatalf("diagnostics = %v deletes = %d", response.Diagnostics, deletes)
-			}
-		})
+	deletes := 0
+	subject := &indicatorResource{client: &fakeAPI{delete: func(_ context.Context, id string) error {
+		deletes++
+		if id != "api-1" {
+			t.Errorf("id = %q", id)
+		}
+		return nil
+	}}}
+	request, response := deleteData(t, subject, testModel(t))
+	subject.Delete(context.Background(), request, response)
+	if response.Diagnostics.HasError() || deletes != 1 {
+		t.Fatalf("diagnostics = %v deletes = %d", response.Diagnostics, deletes)
+	}
+}
+
+func TestDeleteRejectsEmptyStateID(t *testing.T) {
+	t.Parallel()
+	deletes := 0
+	subject := &indicatorResource{client: &fakeAPI{delete: func(context.Context, string) error {
+		deletes++
+		return nil
+	}}}
+	model := testModel(t)
+	model.ID = types.StringValue("")
+	request, response := deleteData(t, subject, model)
+	subject.Delete(context.Background(), request, response)
+	if !response.Diagnostics.HasError() || deletes != 0 {
+		t.Fatalf("diagnostics = %v, deletes = %d", response.Diagnostics, deletes)
 	}
 }
 

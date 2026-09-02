@@ -92,9 +92,14 @@ func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"action": schema.StringAttribute{
-				MarkdownDescription: "Current Indicator action. Supported values: " +
-					"`Allowed`, `Audit`, `Block`, `BlockAndRemediate`, `Warn`.\n\n" +
-					"The legacy `Alert` and `AlertAndBlock` actions are rejected.",
+				MarkdownDescription: docs.Description(
+					"Current Indicator action. Supported values: `Allowed`, `Audit`, `Block`, `BlockAndRemediate`, `Warn`.",
+					docs.Callout{
+						Sigil: docs.Info,
+						Label: "Note",
+						Text:  "`Warn` is supported only for Defender for Cloud Apps. The legacy `Alert` and `AlertAndBlock` actions are rejected.",
+					},
+				),
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
@@ -122,7 +127,8 @@ func (r *indicatorResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"external_id": schema.StringAttribute{
-				Description: "API-reported external correlation ID.",
+				Description: "External correlation ID.",
+				Optional:    true,
 				Computed:    true,
 			},
 			"expiration_time": schema.StringAttribute{

@@ -49,6 +49,7 @@ func apiIndicator(ctx context.Context, model resourceModel, diagnostics *diag.Di
 		Title:              model.Title.ValueString(),
 		Description:        model.Description.ValueString(),
 		Application:        providertypes.StringPointer(model.Application),
+		ExternalID:         providertypes.StringPointer(model.ExternalID),
 		ExpirationTime:     providertypes.StringPointer(model.ExpirationTime),
 		Severity:           model.Severity.ValueString(),
 		RecommendedActions: providertypes.StringPointer(model.RecommendedActions),

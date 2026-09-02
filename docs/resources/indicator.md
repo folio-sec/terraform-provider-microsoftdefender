@@ -57,7 +57,7 @@ resource "microsoftdefender_indicator" "example_installer" {
 
 - `action` (String) Current Indicator action. Supported values: `Allowed`, `Audit`, `Block`, `BlockAndRemediate`, `Warn`.
 
-The legacy `Alert` and `AlertAndBlock` actions are rejected.
+-> **Note:** `Warn` is supported only for Defender for Cloud Apps. The legacy `Alert` and `AlertAndBlock` actions are rejected.
 - `description` (String) Indicator description.
 - `indicator_type` (String) Indicator type. Supported values: `FileSha1`, `FileMd5`, `CertificateThumbprint`, `FileSha256`, `IpAddress`, `DomainName`, `Url`.
 - `indicator_value` (String) Indicator value. File hashes are normalized to lowercase. Changing it replaces the resource.
@@ -68,6 +68,7 @@ The legacy `Alert` and `AlertAndBlock` actions are rejected.
 - `application` (String) User-friendly application name. The API only applies it when creating an Indicator, so changing it replaces the resource.
 - `educate_url` (String) Custom notification or support URL. Supported by the API for URL Indicators with Block or Warn actions.
 - `expiration_time` (String) Optional RFC3339 expiration time.
+- `external_id` (String) External correlation ID.
 - `generate_alert` (Boolean) Whether the Indicator generates an alert. Must be true for Audit.
 - `rbac_group_names` (Set of String) RBAC device group names.
 
@@ -80,7 +81,6 @@ The legacy `Alert` and `AlertAndBlock` actions are rejected.
 - `created_by` (String) API-reported identity that created the Indicator.
 - `created_by_source` (String) API-reported source that created the Indicator.
 - `creation_time_date_time_utc` (String) API-reported Indicator creation time.
-- `external_id` (String) API-reported external correlation ID.
 - `id` (String) Microsoft Defender Indicator API ID.
 - `last_update_time` (String) API-reported last update time.
 - `last_updated_by` (String) API-reported identity that last updated the Indicator.

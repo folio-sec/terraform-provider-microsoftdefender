@@ -25,6 +25,7 @@ func TestAccIndicatorFileSha256Allowed(t *testing.T) {
 		t.Fatalf("generate acceptance-test Indicator value: %v", err)
 	}
 	indicatorValue := hex.EncodeToString(randomBytes[:])
+	externalID := "terraform-provider-acceptance-" + indicatorValue[:16]
 	expirationTime := time.Now().UTC().Add(2 * time.Hour).Truncate(time.Second).Format(time.RFC3339)
 
 	resource.Test(t, resource.TestCase{
@@ -33,16 +34,17 @@ func TestAccIndicatorFileSha256Allowed(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: acceptanceIndicatorConfig(indicatorValue, expirationTime, "Acceptance test Indicator", "Created by the Terraform provider acceptance test"),
+				Config: acceptanceIndicatorConfig(indicatorValue, externalID, expirationTime, "Acceptance test Indicator", "Created by the Terraform provider acceptance test"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("microsoftdefender_indicator.test", "id"),
 					resource.TestCheckResourceAttr("microsoftdefender_indicator.test", "indicator_value", indicatorValue),
 					resource.TestCheckResourceAttr("microsoftdefender_indicator.test", "indicator_type", "FileSha256"),
 					resource.TestCheckResourceAttr("microsoftdefender_indicator.test", "action", "Allowed"),
+					resource.TestCheckResourceAttr("microsoftdefender_indicator.test", "external_id", externalID),
 				),
 			},
 			{
-				Config: acceptanceIndicatorConfig(indicatorValue, expirationTime, "Updated acceptance test Indicator", "Updated by the Terraform provider acceptance test"),
+				Config: acceptanceIndicatorConfig(indicatorValue, externalID, expirationTime, "Updated acceptance test Indicator", "Updated by the Terraform provider acceptance test"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("microsoftdefender_indicator.test", "title", "Updated acceptance test Indicator"),
 					resource.TestCheckResourceAttr("microsoftdefender_indicator.test", "description", "Updated by the Terraform provider acceptance test"),
@@ -96,7 +98,7 @@ func firstEnvironment(names ...string) string {
 	return ""
 }
 
-func acceptanceIndicatorConfig(indicatorValue, expirationTime, title, description string) string {
+func acceptanceIndicatorConfig(indicatorValue, externalID, expirationTime, title, description string) string {
 	return fmt.Sprintf(`
 provider "microsoftdefender" {}
 
@@ -106,11 +108,12 @@ resource "microsoftdefender_indicator" "test" {
   action          = "Allowed"
   title           = %q
   description     = %q
+  external_id     = %q
   expiration_time = %q
 
   severity         = "Informational"
   generate_alert   = false
   rbac_group_names = []
 }
-`, indicatorValue, title, description, expirationTime)
+`, indicatorValue, title, description, externalID, expirationTime)
 }
