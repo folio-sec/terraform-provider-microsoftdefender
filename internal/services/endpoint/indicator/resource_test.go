@@ -303,6 +303,49 @@ func TestReadRejectsMultipleMatches(t *testing.T) {
 	}
 }
 
+func TestUpdateKeepsNullOptionalStringsWhenAPIReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	subject := &indicatorResource{client: &fakeAPI{submit: func(_ context.Context, value indicatorclient.Indicator) (indicatorclient.Indicator, error) {
+		empty := ""
+		value.RecommendedActions = &empty
+		value.EducateURL = &empty
+		value.ExternalID = &empty
+		return value, nil
+	}}}
+	request, response := updateData(t, subject, testModel(t))
+	subject.Update(context.Background(), request, response)
+	if response.Diagnostics.HasError() {
+		t.Fatal(response.Diagnostics)
+	}
+	state := getState(t, response.State)
+	if !state.RecommendedActions.IsNull() || !state.EducateURL.IsNull() || !state.ExternalID.IsNull() {
+		t.Fatalf("recommended_actions = %v, educate_url = %v, external_id = %v", state.RecommendedActions, state.EducateURL, state.ExternalID)
+	}
+}
+
+func TestOptionalStringsEquivalent(t *testing.T) {
+	t.Parallel()
+	empty, value, other := "", "value", "other"
+	cases := []struct {
+		left, right *string
+		want        bool
+	}{
+		{nil, nil, true},
+		{nil, &empty, true},
+		{&empty, nil, true},
+		{&empty, &empty, true},
+		{nil, &value, false},
+		{&empty, &value, false},
+		{&value, &value, true},
+		{&value, &other, false},
+	}
+	for _, testCase := range cases {
+		if got := optionalStringsEquivalent(testCase.left, testCase.right); got != testCase.want {
+			t.Errorf("optionalStringsEquivalent(%v, %v) = %v", testCase.left, testCase.right, got)
+		}
+	}
+}
+
 func TestUpdatePostsAndRefreshesState(t *testing.T) {
 	t.Parallel()
 	submits := 0
