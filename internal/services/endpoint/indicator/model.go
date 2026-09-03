@@ -66,12 +66,12 @@ func setState(ctx context.Context, model *resourceModel, value indicatorclient.I
 	model.Action = types.StringValue(value.Action)
 	model.Title = types.StringValue(value.Title)
 	model.Description = types.StringValue(value.Description)
-	model.Application = providertypes.StringValue(value.Application)
-	model.ExternalID = providertypes.StringValue(value.ExternalID)
+	model.Application = stateOptionalString(model.Application, value.Application)
+	model.ExternalID = stateOptionalString(model.ExternalID, value.ExternalID)
 	model.ExpirationTime = stateRFC3339(model.ExpirationTime, value.ExpirationTime, diagnostics)
 	model.Severity = types.StringValue(value.Severity)
-	model.RecommendedActions = providertypes.StringValue(value.RecommendedActions)
-	model.EducateURL = providertypes.StringValue(value.EducateURL)
+	model.RecommendedActions = stateOptionalString(model.RecommendedActions, value.RecommendedActions)
+	model.EducateURL = stateOptionalString(model.EducateURL, value.EducateURL)
 	model.GenerateAlert = types.BoolValue(value.GenerateAlert)
 	model.SourceType = providertypes.StringValue(value.SourceType)
 	model.CreatedBySource = providertypes.StringValue(value.CreatedBySource)
@@ -85,6 +85,16 @@ func setState(ctx context.Context, model *resourceModel, value indicatorclient.I
 	rbacGroupIDs, rbacGroupIDDiagnostics := types.SetValueFrom(ctx, types.StringType, value.RBACGroupIDs)
 	diagnostics.Append(rbacGroupIDDiagnostics...)
 	model.RBACGroupIDs = rbacGroupIDs
+}
+
+// stateOptionalString keeps the prior null or empty value when the API
+// reports the semantically identical empty value, because Microsoft Defender
+// returns "" for optional string fields that were submitted as absent.
+func stateOptionalString(current types.String, value *string) types.String {
+	if !current.IsUnknown() && (current.IsNull() || current.ValueString() == "") && (value == nil || *value == "") {
+		return current
+	}
+	return providertypes.StringValue(value)
 }
 
 func stateRFC3339(current timetypes.RFC3339, value *string, diagnostics *diag.Diagnostics) timetypes.RFC3339 {
@@ -108,6 +118,17 @@ func indicatorValuesEqual(left, right string) bool {
 	return left == right
 }
 
+// optionalStringsEquivalent treats nil and "" as the same value, because
+// Microsoft Defender returns "" for optional string fields that were
+// submitted as absent.
+func optionalStringsEquivalent(left, right *string) bool {
+	emptyOrNil := func(value *string) bool { return value == nil || *value == "" }
+	if emptyOrNil(left) || emptyOrNil(right) {
+		return emptyOrNil(left) && emptyOrNil(right)
+	}
+	return *left == *right
+}
+
 func indicatorMismatches(actual, expected indicatorclient.Indicator) []string {
 	mismatches := make([]string, 0)
 	compareString := func(name, actualValue, expectedValue string) {
@@ -120,16 +141,16 @@ func indicatorMismatches(actual, expected indicatorclient.Indicator) []string {
 	compareString("title", actual.Title, expected.Title)
 	compareString("description", actual.Description, expected.Description)
 	compareString("severity", actual.Severity, expected.Severity)
-	if !equal.OptionalString(actual.Application, expected.Application) {
+	if !optionalStringsEquivalent(actual.Application, expected.Application) {
 		mismatches = append(mismatches, "application")
 	}
 	if !equal.OptionalRFC3339Time(actual.ExpirationTime, expected.ExpirationTime) {
 		mismatches = append(mismatches, "expiration_time")
 	}
-	if !equal.OptionalString(actual.RecommendedActions, expected.RecommendedActions) {
+	if !optionalStringsEquivalent(actual.RecommendedActions, expected.RecommendedActions) {
 		mismatches = append(mismatches, "recommended_actions")
 	}
-	if !equal.OptionalString(actual.EducateURL, expected.EducateURL) {
+	if !optionalStringsEquivalent(actual.EducateURL, expected.EducateURL) {
 		mismatches = append(mismatches, "educate_url")
 	}
 	if !equal.StringSet(actual.RBACGroupNames, expected.RBACGroupNames) {
